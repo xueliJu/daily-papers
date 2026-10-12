@@ -41,5 +41,17 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add README.md papers/
-          git diff --quiet && git diff --staged --quiet || git commit -m "Update daily papers - $(date +'%Y-%m-%d')"
-          git push
+          if ! git diff --quiet || ! git diff --staged --quiet; then
+            git commit -m "Update daily papers - $(date +'%Y-%m-%d')"
+          fi
+          for attempt in 1 2 3; do
+            git pull --rebase origin main
+            if git push; then
+              break
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo "Push failed after 3 attempts"
+              exit 1
+            fi
+            sleep 2
+          done
